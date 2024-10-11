@@ -8,81 +8,71 @@ on:
 
 # What the action will do
 jobs:
-  # Run interaction tests
-  interaction-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v3
-        with:
-          #👇 Sets the version of Node.js to use
-          node-version: 18
-      - name: Install dependencies
-        run: yarn
-      - name: Install Playwright
-        run: npx playwright install --with-deps
-      - name: Build Storybook
-        run: yarn build-storybook --quiet
-      - name: Serve Storybook and run tests
-        run: |
-          npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue"             "npx http-server storybook-static --port 6006 --silent"             "npx wait-on tcp:127.0.0.1:6006 && yarn test-storybook"
-
-  # # Build and deploy the Storybook
-  # build-and-deploy-storybook:
+  # # Run interaction tests
+  # interaction-tests:
   #   runs-on: ubuntu-latest
-  #   name: Build and Deploy Storybook
-  #   if: 'contains(github.event.head_commit.message, "--deploy-storybook")'
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v3
-
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v3
-  #       with:
-  #         node-version: 18
-
-  #     - name: Install dependencies
-  #       run: yarn install
-
-  #     - name: Build Storybook
-  #       run: npm run build-storybook
-
-  #     - name: Deploy to Azure Static Web Apps
-  #       uses: Azure/static-web-apps-deploy@v1
-  #       with:
-  #         azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APP_DEPLOYMENT_TOKEN }}
-  #         repo_token: ${{ secrets.REPO_GIT_TOKEN }} # Used for Github integrations (i.e. PR comments)
-  #         action: 'upload'
-  #         app_location: '/' # App source code path
-  #         output_location: '/storybook-static' # Built app content directory - optional
-
-  # Publish package
-  publish-package:
-    runs-on: ubuntu-latest
-    name: Build and Deploy Package
-    steps:
-      - name: Publish with Verdaccio
-        uses: verdaccio/github-actions/publish@master
-
-  # Run the release
-  # release:
-  #   runs-on: ubuntu-latest
-  #   if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
   #   steps:
   #     - uses: actions/checkout@v2
-
-  #     - name: Prepare repository
-  #       run: git fetch --unshallow --tags
-  #     - name: Use Node.js 16.x
-  #       uses: actions/setup-node@v3
+  #     - uses: actions/setup-node@v3
   #       with:
+  #         #👇 Sets the version of Node.js to use
   #         node-version: 18
   #     - name: Install dependencies
-  #       uses: bahmutov/npm-install@v1
-  #     - name: Create Release
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.REPO_GIT_TOKEN }}
-  #         #👇 npm token, see https://storybook.js.org/tutorials/design-systems-for-developers/react/en/distribute/ to obtain it
-  #         NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+  #       run: yarn
+  #     - name: Install Playwright
+  #       run: npx playwright install --with-deps
+  #     - name: Build Storybook
+  #       run: yarn build-storybook --quiet
+  #     - name: Serve Storybook and run tests
   #       run: |
-  #         yarn release
+  #         npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue"             "npx http-server storybook-static --port 6006 --silent"             "npx wait-on tcp:127.0.0.1:6006 && yarn test-storybook"
+
+  # Build and deploy the Storybook
+  build-and-deploy-storybook:
+    runs-on: ubuntu-latest
+    name: Build and Deploy Storybook
+    if: 'contains(github.event.head_commit.message, "--deploy-storybook")'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build Storybook
+        run: npm run build-storybook
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APP_DEPLOYMENT_TOKEN }}
+          repo_token: ${{ secrets.REPO_GIT_TOKEN }} # Used for Github integrations (i.e. PR comments)
+          action: 'upload'
+          app_location: '/' # App source code path
+          output_location: '/storybook-static' # Built app content directory - optional
+
+  # Publish package
+  publish:
+    name: 'Publish to GitHub Packages'
+    # needs: [interaction-tests]
+    runs-on: ubuntu-18.04
+    if: github.repository_owner == 'adityarawat96'
+    steps:
+      - name: Upload
+        uses: actions/download-artifact@v2
+        with:
+          name: package
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 18
+          registry-url: https://npm.pkg.github.com/
+          scope: '@adityarawat96'
+      - run: echo "registry=https://npm.pkg.github.com/@adityarawat96" >> .npmrc
+      - run: npm publish $(ls *.tgz)
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.REPO_GIT_TOKEN}}
