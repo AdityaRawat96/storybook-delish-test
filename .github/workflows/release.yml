@@ -8,35 +8,24 @@ on:
 
 # What the action will do
 jobs:
-  # # Run interaction tests
-  # interaction-tests:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: actions/setup-node@v3
-  #       with:
-  #         #👇 Sets the version of Node.js to use
-  #         node-version: 20
-  #     - name: Install dependencies
-  #       run: yarn
-  #     - name: Install Playwright
-  #       run: npx playwright install --with-deps
-  #     - name: Build Storybook
-  #       run: yarn build-storybook --quiet
-  #     - name: Serve Storybook and run tests
-  #       run: |
-  #         npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue"             "npx http-server storybook-static --port 6006 --silent"             "npx wait-on tcp:127.0.0.1:6006 && yarn test-storybook"
-
-  # Run visual tests
-  visual-tests:
-    # The operating system it will run on
+  # Run interaction tests
+  interaction-tests:
     runs-on: ubuntu-latest
-    # The list of steps that the action will go through
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
         with:
-          #👇 Fetches all history so Chromatic can compare against previous builds
-          fetch-depth: 0
+          #👇 Sets the version of Node.js to use
+          node-version: 20
+      - name: Install dependencies
+        run: yarn
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+      - name: Build Storybook
+        run: yarn build-storybook --quiet
+      - name: Serve Storybook and run tests
+        run: |
+          npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue"             "npx http-server storybook-static --port 6006 --silent"             "npx wait-on tcp:127.0.0.1:6006 && yarn test-storybook"
 
   # Build and deploy the Storybook
   build-and-deploy-storybook:
@@ -67,6 +56,8 @@ jobs:
           app_location: '/' # App source code path
           output_location: '/storybook-static' # Built app content directory - optional
 
+      - name: Publish with Verdaccio
+        uses: verdaccio/github-actions/publish@master
 
   # Run the release
   # release:
