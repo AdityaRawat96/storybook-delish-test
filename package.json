@@ -9,7 +9,7 @@
   "main": "dist/cjs/index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AdityaRawat96/storybook-delish-test.git"
+    "url": "https://github.com/adityarawat96/storybook-delish-test.git"
   },
   "module": "dist/esm/index.js",
   "types": "dist/index.d.ts",
