@@ -27,6 +27,7 @@
     "verdaccio": "verdaccio",
     "verdaccioPublish": "npm publish --registry http://localhost:4873/",
     "prepare": "husky",
+    "changeset": "changeset",
     "version": "changeset version",
     "release": "changeset publish"
   },
