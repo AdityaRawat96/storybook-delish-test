@@ -6,27 +6,12 @@ on:
   push:
     branches: [main]
 
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions: {}
+
 # What the action will do
 jobs:
-  # # Run interaction tests
-  # interaction-tests:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: actions/setup-node@v3
-  #       with:
-  #         #👇 Sets the version of Node.js to use
-  #         node-version: 18
-  #     - name: Install dependencies
-  #       run: yarn
-  #     - name: Install Playwright
-  #       run: npx playwright install --with-deps
-  #     - name: Build Storybook
-  #       run: yarn build-storybook --quiet
-  #     - name: Serve Storybook and run tests
-  #       run: |
-  #         npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue"             "npx http-server storybook-static --port 6006 --silent"             "npx wait-on tcp:127.0.0.1:6006 && yarn test-storybook"
-
   # Build and deploy the Storybook
   build-and-deploy-storybook:
     runs-on: ubuntu-latest
@@ -60,20 +45,31 @@ jobs:
   publish:
     name: 'Publish to GitHub Packages'
     # needs: [interaction-tests]
-    runs-on: ubuntu-latest
     permissions:
-      contents: read
-      packages: write
+      contents: write # to create release (changesets/action)
+      issues: write # to post issue comments (changesets/action)
+      pull-requests: write # to create pull request (changesets/action)
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      # Setup .npmrc file to publish to GitHub Packages
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
           node-version: '20.x'
           registry-url: 'https://npm.pkg.github.com'
           # Defaults to the user or organization that owns the workflow file
           scope: '@adityarawat96'
-      - run: yarn
-      - run: yarn publish
+
+      - name: 🚀 Create and publish versions
+        uses: changesets/action@v1
+        with:
+          publish: npm run release
+          version: npm run version
+          commit: 'chore: new release'
+          title: 'chore: new release candidate'
         env:
+          GITHUB_TOKEN: ${{ secrets.REPO_GIT_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.REPO_GIT_TOKEN }}
