@@ -63,6 +63,9 @@ jobs:
           # Defaults to the user or organization that owns the workflow file
           scope: '@adityarawat96'
 
+      - name: Install dependencies
+        run: yarn install
+
       - name: 🚀 Create and publish versions
         uses: changesets/action@v1
         with:
